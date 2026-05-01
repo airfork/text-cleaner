@@ -28,6 +28,39 @@ dist/text-cleaner/
   logs/
 ```
 
+## Windows Zip
+
+```bash
+uv run python scripts/package_windows_zip.py
+```
+
+The zip command rebuilds `dist/text-cleaner/`, adds `README-WINDOWS.txt`, and
+creates `dist/text-cleaner-windows.zip`. The zip contains only the Windows
+portable files needed to run from PowerShell.
+
+## Email Windows Zip
+
+The email helper uses iCloud SMTP by default and stores the app-specific password
+in the OS keyring. Do not put the app-specific password in this repo.
+
+One-time setup:
+
+```bash
+uv run python scripts/email_windows_zip.py --setup --from yourname@icloud.com
+```
+
+Send the package:
+
+```bash
+uv run python scripts/email_windows_zip.py --from yourname@icloud.com --to destination@example.com
+```
+
+Reset the stored password:
+
+```bash
+uv run python scripts/email_windows_zip.py --setup --reset-password --from yourname@icloud.com
+```
+
 ## Running The Portable App
 
 Run commands from inside `dist/text-cleaner/`.
