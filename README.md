@@ -38,6 +38,50 @@ The zip command rebuilds `dist/text-cleaner/`, adds `README-WINDOWS.txt`, and
 creates `dist/text-cleaner-windows.zip`. The zip contains only the Windows
 portable files needed to run from PowerShell.
 
+## GitHub Release
+
+The release helper rebuilds the Windows zip and publishes it as a GitHub release
+asset. It uses the package version from `pyproject.toml` as the default tag, so
+version `0.1.0` publishes `v0.1.0`.
+
+Prerequisites:
+
+```bash
+gh auth status
+```
+
+Release from a clean working tree:
+
+```bash
+uv run python scripts/release_github.py
+```
+
+If the release tag does not exist, the script creates it. If it already exists,
+the script replaces `text-cleaner-windows.zip` on that release with a freshly
+built copy.
+
+The script refuses to publish when the working tree has uncommitted changes. To
+override that for a one-off test release:
+
+```bash
+uv run python scripts/release_github.py --allow-dirty
+```
+
+Download the latest release on Windows with GitHub CLI:
+
+```powershell
+gh release download --repo airfork/text-cleaner --pattern text-cleaner-windows.zip
+Expand-Archive .\text-cleaner-windows.zip -DestinationPath . -Force
+cd .\text-cleaner
+.\run.cmd
+```
+
+Or download a specific version:
+
+```powershell
+gh release download v0.1.0 --repo airfork/text-cleaner --pattern text-cleaner-windows.zip
+```
+
 ## Email Windows Zip
 
 The email helper uses iCloud SMTP by default and stores the app-specific password
