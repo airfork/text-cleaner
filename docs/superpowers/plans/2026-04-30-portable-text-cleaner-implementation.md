@@ -1716,7 +1716,7 @@ git commit -m "feat: add portable pyz build"
 - Modify: `README.md`
 - Modify: `docs/superpowers/plans/2026-04-30-portable-text-cleaner-implementation.md`
 
-- [ ] **Step 1: Update README with operation and logging behavior**
+- [x] **Step 1: Update README with operation and logging behavior**
 
 Add these sections to `README.md`:
 
@@ -1740,7 +1740,7 @@ Raw input and clipboard text are not logged by default.
 NBSP cleanup is explicit: `unicode_spaces_to_normal_space` converts NBSP and related Unicode spaces to regular spaces before trim and collapse operations run.
 ```
 
-- [ ] **Step 2: Run full verification**
+- [x] **Step 2: Run full verification**
 
 Run:
 
@@ -1758,7 +1758,7 @@ Expected:
 - build recreates `dist/text-cleaner/`
 - direct archive run prints `text-cleaner 0.1.0`
 
-- [ ] **Step 3: Manual smoke test the TUI**
+- [x] **Step 3: Manual smoke test the TUI**
 
 Run:
 
