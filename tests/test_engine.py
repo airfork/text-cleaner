@@ -59,3 +59,21 @@ def test_clean_text_rejects_unknown_operations():
 
     with pytest.raises(ValueError, match="unknown operation.*typo"):
         clean_text("hello", profile)
+
+
+def test_clean_text_converts_smart_quotes_before_ascii_cleanup():
+    profile = Profile(
+        "test",
+        "Test",
+        "Test profile",
+        ["smart_quotes_to_plain", "remove_accents", "remove_non_ascii"],
+    )
+
+    result = clean_text("“café”", profile)
+
+    assert result.text == '"cafe"'
+    assert result.report.operations == (
+        "smart_quotes_to_plain",
+        "remove_accents",
+        "remove_non_ascii",
+    )

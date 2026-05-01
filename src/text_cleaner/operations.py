@@ -1,37 +1,13 @@
 from __future__ import annotations
 
 import html
-import html.entities
 import re
 import unicodedata
 from collections.abc import Callable
-from html.parser import HTMLParser
 
 import emoji
 
 from text_cleaner.profiles import VALID_OPERATIONS
-
-
-class _TextExtractor(HTMLParser):
-    def __init__(self) -> None:
-        super().__init__(convert_charrefs=False)
-        self.parts: list[str] = []
-
-    def handle_data(self, data: str) -> None:
-        self.parts.append(data)
-
-    def handle_entityref(self, name: str) -> None:
-        if name in html.entities.name2codepoint:
-            self.parts.append(f"&{name};")
-        else:
-            self.parts.append(f"&{name}")
-
-    def handle_charref(self, name: str) -> None:
-        self.parts.append(f"&#{name};")
-
-    def text(self) -> str:
-        return "".join(self.parts)
-
 
 SMART_QUOTES = {
     "\u2018": "'",
@@ -98,10 +74,19 @@ def capitalize_words(text: str) -> str:
 
 
 def normalize_unicode(text: str) -> str:
-    return "".join(
-        ch if unicodedata.category(ch) == "Zs" else unicodedata.normalize("NFKC", ch)
-        for ch in text
-    )
+    protected_spaces: list[str] = []
+
+    def protect_space(match: re.Match[str]) -> str:
+        protected_spaces.append(match.group(0))
+        return f"\ue000{len(protected_spaces) - 1}\ue001"
+
+    protected = re.sub(r"\s", protect_space, text)
+    normalized = unicodedata.normalize("NFKC", protected)
+
+    def restore_space(match: re.Match[str]) -> str:
+        return protected_spaces[int(match.group(1))]
+
+    return re.sub(r"\ue000(\d+)\ue001", restore_space, normalized)
 
 
 def remove_punctuation(text: str) -> str:
@@ -126,13 +111,7 @@ def smart_quotes_to_plain(text: str) -> str:
 
 
 def strip_html_tags(text: str) -> str:
-    if "<" not in text and ">" not in text:
-        return text
-
-    parser = _TextExtractor()
-    parser.feed(text)
-    parser.close()
-    return parser.text()
+    return re.sub(r"</?[A-Za-z][^>]*>", "", text)
 
 
 def remove_duplicate_lines(text: str) -> str:
@@ -190,11 +169,11 @@ OPERATION_ORDER = [
     "lowercase",
     "sentence_case",
     "capitalize_words",
+    "smart_quotes_to_plain",
     "remove_punctuation",
     "strip_emoji",
     "remove_accents",
     "remove_non_ascii",
     "remove_non_alphanumeric",
-    "smart_quotes_to_plain",
     "remove_duplicate_lines",
 ]
