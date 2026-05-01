@@ -74,19 +74,22 @@ def capitalize_words(text: str) -> str:
 
 
 def normalize_unicode(text: str) -> str:
-    protected_spaces: list[str] = []
+    parts: list[str] = []
+    segment: list[str] = []
 
-    def protect_space(match: re.Match[str]) -> str:
-        protected_spaces.append(match.group(0))
-        return f"\ue000{len(protected_spaces) - 1}\ue001"
+    for ch in text:
+        if unicodedata.category(ch) == "Zs":
+            if segment:
+                parts.append(unicodedata.normalize("NFKC", "".join(segment)))
+                segment.clear()
+            parts.append(ch)
+        else:
+            segment.append(ch)
 
-    protected = re.sub(r"\s", protect_space, text)
-    normalized = unicodedata.normalize("NFKC", protected)
+    if segment:
+        parts.append(unicodedata.normalize("NFKC", "".join(segment)))
 
-    def restore_space(match: re.Match[str]) -> str:
-        return protected_spaces[int(match.group(1))]
-
-    return re.sub(r"\ue000(\d+)\ue001", restore_space, normalized)
+    return "".join(parts)
 
 
 def remove_punctuation(text: str) -> str:
@@ -111,7 +114,49 @@ def smart_quotes_to_plain(text: str) -> str:
 
 
 def strip_html_tags(text: str) -> str:
-    return re.sub(r"</?[A-Za-z][^>]*>", "", text)
+    output: list[str] = []
+    index = 0
+
+    while index < len(text):
+        ch = text[index]
+        if ch != "<" or not _starts_html_tag(text, index):
+            output.append(ch)
+            index += 1
+            continue
+
+        end = _find_tag_end(text, index + 1)
+        if end is None:
+            output.append(ch)
+            index += 1
+            continue
+
+        index = end + 1
+
+    return "".join(output)
+
+
+def _starts_html_tag(text: str, index: int) -> bool:
+    next_index = index + 1
+    return next_index < len(text) and (
+        text[next_index].isalpha() or text[next_index] in "/!?"
+    )
+
+
+def _find_tag_end(text: str, index: int) -> int | None:
+    quote: str | None = None
+
+    while index < len(text):
+        ch = text[index]
+        if quote:
+            if ch == quote:
+                quote = None
+        elif ch in "'\"":
+            quote = ch
+        elif ch == ">":
+            return index
+        index += 1
+
+    return None
 
 
 def remove_duplicate_lines(text: str) -> str:
