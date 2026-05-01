@@ -34,5 +34,12 @@ def test_apply_operation(operation, input_text, expected):
     assert apply_operation(operation, input_text) == expected
 
 
+def test_strip_html_tags_preserves_entity_text_for_decode_operation():
+    assert (
+        apply_operation("strip_html_tags", "<p>Tom&nbsp;&amp;&nbsp;Jerry</p>")
+        == "Tom&nbsp;&amp;&nbsp;Jerry"
+    )
+
+
 def test_operations_match_profile_valid_operations():
     assert set(OPERATIONS) == VALID_OPERATIONS

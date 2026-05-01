@@ -14,11 +14,17 @@ from text_cleaner.profiles import VALID_OPERATIONS
 
 class _TextExtractor(HTMLParser):
     def __init__(self) -> None:
-        super().__init__()
+        super().__init__(convert_charrefs=False)
         self.parts: list[str] = []
 
     def handle_data(self, data: str) -> None:
         self.parts.append(data)
+
+    def handle_entityref(self, name: str) -> None:
+        self.parts.append(f"&{name};")
+
+    def handle_charref(self, name: str) -> None:
+        self.parts.append(f"&#{name};")
 
     def text(self) -> str:
         return "".join(self.parts)
