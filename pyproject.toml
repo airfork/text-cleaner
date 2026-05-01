@@ -1,6 +1,6 @@
 [project]
 name = "text-cleaner"
-version = "0.1.0"
+version = "0.1.1"
 description = "Portable TUI text cleaner with saved profiles"
 readme = "README.md"
 requires-python = ">=3.11"

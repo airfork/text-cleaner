@@ -193,7 +193,10 @@ Screen {
     background: transparent;
     padding: 0 1;
     margin: 0;
-    border: none;
+    /* Reserve 1 column on the left for the selection bar so layout is
+       stable when items become highlighted. Color matches the panel
+       background so it's invisible until selected. */
+    border-left: solid #0e1117;
     height: 1;
 }
 
@@ -202,22 +205,28 @@ Screen {
     width: 100%;
 }
 
-#profile-list > ListItem.--highlight {
-    background: #1f2a3d;
+/* Selected but profile list NOT focused — visible but muted. */
+#profile-list > ListItem.-highlight {
+    background: #1a2a44;
+    border-left: solid #6e7681;
 }
 
-#profile-list > ListItem.--highlight .item-name {
-    color: #ffffff;
+#profile-list > ListItem.-highlight .item-name {
+    color: #c9d1d9;
     text-style: bold;
 }
 
-/* When the list itself doesn't have focus, dim the highlight */
-#profile-list:focus > ListItem.--highlight {
-    background: #2a3b56;
+/* Selected AND profile list focused — prominent. Yellow bar + bright
+   blue background + bold white text gives an unambiguous selection
+   indicator that survives terminals with weak bold rendering. */
+#profile-list:focus > ListItem.-highlight {
+    background: #1f4f8c;
+    border-left: solid #d4a017;
 }
 
-#profile-list:focus > ListItem.--highlight .item-name {
-    color: #5fafff;
+#profile-list:focus > ListItem.-highlight .item-name {
+    color: #ffffff;
+    text-style: bold;
 }
 
 #main {
@@ -605,7 +614,10 @@ class PasteScreen(ModalScreen[CleanResult | None]):
 class ClipboardPreviewScreen(ModalScreen[bool]):
     """Show cleaned clipboard preview, ask to copy."""
 
-    BINDINGS = [Binding("escape", "dismiss(False)", "Cancel", show=True)]
+    BINDINGS = [
+        Binding("escape", "dismiss(False)", "Cancel", show=True),
+        Binding("enter,c", "copy", "Copy", show=True, priority=True),
+    ]
 
     def __init__(self, profile: Profile, result: CleanResult) -> None:
         super().__init__()
@@ -636,6 +648,9 @@ class ClipboardPreviewScreen(ModalScreen[bool]):
 
     @on(Button.Pressed, "#copy-btn")
     def _copy(self) -> None:
+        self.action_copy()
+
+    def action_copy(self) -> None:
         self.dismiss(True)
 
 

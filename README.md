@@ -42,7 +42,7 @@ portable files needed to run from PowerShell.
 
 The release helper rebuilds the Windows zip and publishes it as a GitHub release
 asset. It uses the package version from `pyproject.toml` as the default tag, so
-version `0.1.0` publishes `v0.1.0`.
+version `0.1.1` publishes `v0.1.1`.
 
 Prerequisites:
 
@@ -85,7 +85,7 @@ cd .\text-cleaner
 Or download a specific version:
 
 ```powershell
-gh release download v0.1.0 --repo airfork/text-cleaner --pattern text-cleaner-windows.zip
+gh release download v0.1.1 --repo airfork/text-cleaner --pattern text-cleaner-windows.zip
 ```
 
 ## Email Windows Zip

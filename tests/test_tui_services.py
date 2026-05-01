@@ -1,4 +1,8 @@
+import asyncio
+from pathlib import Path
 from typing import Any
+
+import pytest
 
 from text_cleaner import tui
 from text_cleaner.profiles import Profile, ProfileValidationError, ReplacementRule
@@ -29,6 +33,19 @@ class FakeLogger:
 
     def exception(self, *args: Any, **kwargs: Any) -> None:
         self.exception_calls.append((args, kwargs))
+
+
+class FakeClipboard:
+    def __init__(self, value: str) -> None:
+        self.value = value
+        self.writes: list[str] = []
+
+    def read_text(self) -> str:
+        return self.value
+
+    def write_text(self, value: str) -> None:
+        self.value = value
+        self.writes.append(value)
 
 
 def test_operation_summary_returns_empty_message_for_profile_without_actions():
@@ -151,3 +168,35 @@ def test_load_profiles_for_tui_reports_validation_failure():
     assert len(logger.info_calls) == 1
     logged_values = repr(logger.info_calls[0])
     assert "bad profile" not in logged_values
+
+
+@pytest.mark.parametrize("confirm_key", ["enter", "c"])
+def test_clipboard_preview_keyboard_confirmation_copies_cleaned_text(confirm_key: str):
+    async def run_flow() -> FakeClipboard:
+        clipboard = FakeClipboard("Text with whitespace after it                          ")
+        profile = Profile(
+            "nbsp_cleanup",
+            "NBSP cleanup",
+            "Convert NBSP/unicode spaces, trim, collapse repeated spaces",
+            ["unicode_spaces_to_normal_space", "trim", "collapse_spaces"],
+        )
+        app = tui.TextCleanerApp(
+            repository=FakeRepository({"nbsp_cleanup": profile}),
+            clipboard=clipboard,  # type: ignore[arg-type]
+            portable_dir=Path("."),
+            logger=FakeLogger(),  # type: ignore[arg-type]
+            initial_profiles={"nbsp_cleanup": profile},
+        )
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.press("c")
+            await pilot.pause()
+            await pilot.press(confirm_key)
+            await pilot.pause()
+
+        return clipboard
+
+    clipboard = asyncio.run(run_flow())
+
+    assert clipboard.writes == ["Text with whitespace after it"]
