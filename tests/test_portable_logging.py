@@ -1,6 +1,10 @@
 from pathlib import Path
 
-from text_cleaner.logging_setup import configure_logging, write_diagnostics
+from text_cleaner.logging_setup import (
+    configure_logging,
+    write_diagnostics,
+    write_startup_error,
+)
 from text_cleaner.portable import resolve_portable_dir
 
 
@@ -31,6 +35,16 @@ def test_configure_logging_writes_log_file(tmp_path):
     assert "hello from test" in log_file.read_text(encoding="utf-8")
 
 
+def test_configure_logging_closes_replaced_handlers(tmp_path):
+    logger = configure_logging(tmp_path)
+    old_handler = logger.handlers[0]
+
+    logger = configure_logging(tmp_path)
+
+    assert old_handler not in logger.handlers
+    assert old_handler.stream is None
+
+
 def test_write_diagnostics_creates_timestamped_dump(tmp_path):
     logger = configure_logging(tmp_path)
     logger.info("diagnostic source")
@@ -40,3 +54,25 @@ def test_write_diagnostics_creates_timestamped_dump(tmp_path):
     assert dump.parent == tmp_path / "logs"
     assert dump.name.startswith("diagnostics-")
     assert "diagnostic source" in dump.read_text(encoding="utf-8")
+
+
+def test_write_diagnostics_uses_unique_names_for_rapid_calls(tmp_path):
+    configure_logging(tmp_path)
+
+    first = write_diagnostics(tmp_path)
+    second = write_diagnostics(tmp_path)
+
+    assert first != second
+    assert first.exists()
+    assert second.exists()
+
+
+def test_write_startup_error_includes_traceback(tmp_path):
+    try:
+        raise RuntimeError("startup failed")
+    except RuntimeError as exc:
+        output = write_startup_error(tmp_path, exc)
+
+    contents = output.read_text(encoding="utf-8")
+    assert "RuntimeError: startup failed" in contents
+    assert "Traceback (most recent call last)" in contents

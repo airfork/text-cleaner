@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import platform
+import traceback
 from datetime import datetime
 from pathlib import Path
 
@@ -15,7 +16,9 @@ def configure_logging(portable_dir: Path) -> logging.Logger:
     logs_dir = ensure_portable_dirs(portable_dir)
     logger = logging.getLogger(LOGGER_NAME)
     logger.setLevel(logging.DEBUG)
-    logger.handlers.clear()
+    for handler in list(logger.handlers):
+        logger.removeHandler(handler)
+        handler.close()
     logger.propagate = False
 
     handler = logging.FileHandler(logs_dir / "text-cleaner.log", encoding="utf-8")
@@ -36,7 +39,7 @@ def configure_logging(portable_dir: Path) -> logging.Logger:
 
 def write_diagnostics(portable_dir: Path) -> Path:
     logs_dir = ensure_portable_dirs(portable_dir)
-    timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+    timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S-%f")
     output = logs_dir / f"diagnostics-{timestamp}.log"
     source = logs_dir / "text-cleaner.log"
     with output.open("w", encoding="utf-8") as handle:
@@ -52,5 +55,8 @@ def write_diagnostics(portable_dir: Path) -> Path:
 def write_startup_error(portable_dir: Path, exc: BaseException) -> Path:
     logs_dir = ensure_portable_dirs(portable_dir)
     output = logs_dir / "startup-error.log"
-    output.write_text(f"{type(exc).__name__}: {exc}\n", encoding="utf-8")
+    output.write_text(
+        "".join(traceback.format_exception(type(exc), exc, exc.__traceback__)),
+        encoding="utf-8",
+    )
     return output
