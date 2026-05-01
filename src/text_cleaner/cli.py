@@ -26,8 +26,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         logger = configure_logging(portable_dir)
         logger.info("cli_start portable_dir=%s", portable_dir)
-        print("Text Cleaner TUI is not wired yet.")
-        return 0
+        from text_cleaner.tui import run_tui
+
+        return run_tui(portable_dir, logger)
     except Exception as exc:
         write_startup_error(portable_dir, exc)
         raise
