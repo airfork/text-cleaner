@@ -1,0 +1,24 @@
+[profiles.nbsp_cleanup]
+name = "NBSP cleanup"
+description = "Convert NBSP/unicode spaces, trim, collapse repeated spaces"
+operations = ["unicode_spaces_to_normal_space", "trim", "collapse_spaces"]
+
+[profiles.web_text_cleanup]
+name = "Web text cleanup"
+description = "Strip HTML, decode entities, normalize spacing"
+operations = ["strip_html_tags", "decode_html_entities", "unicode_spaces_to_normal_space", "collapse_spaces"]
+
+[profiles.plain_text_normalize]
+name = "Plain text normalize"
+description = "Normalize spacing, quotes, accents, and blank lines"
+operations = ["unicode_spaces_to_normal_space", "smart_quotes_to_plain", "remove_accents", "trim", "collapse_spaces", "collapse_blank_lines"]
+
+[profiles.deduplicate_lines]
+name = "Deduplicate lines"
+description = "Remove duplicate lines while preserving first occurrence"
+operations = ["remove_duplicate_lines"]
+
+[profiles.ascii_safe_cleanup]
+name = "ASCII-safe cleanup"
+description = "Plain ASCII output with normalized spaces and quotes"
+operations = ["unicode_spaces_to_normal_space", "smart_quotes_to_plain", "remove_accents", "remove_non_ascii", "trim", "collapse_spaces"]
