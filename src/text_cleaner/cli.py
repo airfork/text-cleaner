@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import argparse
+import sys
+from pathlib import Path
 
 from text_cleaner import __version__
+from text_cleaner.logging_setup import configure_logging, write_startup_error
+from text_cleaner.portable import resolve_portable_dir
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -18,5 +22,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.version:
         print(f"text-cleaner {__version__}")
         return 0
-    print("Text Cleaner TUI is not wired yet.")
-    return 0
+    portable_dir = resolve_portable_dir(args.portable_dir, Path(sys.argv[0]))
+    try:
+        logger = configure_logging(portable_dir)
+        logger.info("cli_start portable_dir=%s", portable_dir)
+        print("Text Cleaner TUI is not wired yet.")
+        return 0
+    except Exception as exc:
+        write_startup_error(portable_dir, exc)
+        raise
