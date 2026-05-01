@@ -288,6 +288,12 @@ def test_load_profiles_for_tui_recovers_invalid_profile_file(monkeypatch):
 
 def test_clipboard_flow_success_cleans_text_and_logs_metadata(monkeypatch):
     dialog_calls = patch_message_dialog(monkeypatch)
+    confirmation_calls: list[dict[str, Any]] = []
+    monkeypatch.setattr(
+        tui,
+        "button_dialog",
+        lambda **kwargs: FakeDialog(confirmation_calls, True, **kwargs),
+    )
     clipboard = FakeClipboard("\u00a0Hello\u00a0\u00a0World\u00a0")
     logger = FakeLogger()
 
@@ -299,11 +305,35 @@ def test_clipboard_flow_success_cleans_text_and_logs_metadata(monkeypatch):
     assert not logger.exception_calls
     assert len(dialog_calls) == 1
     assert dialog_calls[0]["title"] == "Clipboard cleaned"
+    assert len(confirmation_calls) == 1
+    assert confirmation_calls[0]["title"] == "Clipboard preview"
+    assert "Hello World" in confirmation_calls[0]["text"]
 
     logged_args, logged_kwargs = logger.info_calls[0]
     logged_values = repr((logged_args, logged_kwargs))
     assert "\u00a0Hello\u00a0\u00a0World\u00a0" not in logged_values
     assert "Hello World" not in logged_values
+
+
+def test_clipboard_flow_cancel_leaves_clipboard_unchanged(monkeypatch):
+    dialog_calls = patch_message_dialog(monkeypatch)
+    confirmation_calls: list[dict[str, Any]] = []
+    monkeypatch.setattr(
+        tui,
+        "button_dialog",
+        lambda **kwargs: FakeDialog(confirmation_calls, False, **kwargs),
+    )
+    clipboard = FakeClipboard("\u00a0Hello\u00a0\u00a0World\u00a0")
+    logger = FakeLogger()
+
+    tui.clipboard_flow(nbsp_profile(), clipboard, logger)
+
+    assert clipboard.text == "\u00a0Hello\u00a0\u00a0World\u00a0"
+    assert clipboard.write_calls == []
+    assert len(logger.info_calls) == 1
+    assert not logger.exception_calls
+    assert dialog_calls == []
+    assert confirmation_calls[0]["title"] == "Clipboard preview"
 
 
 def test_clipboard_flow_read_failure_logs_exception_and_shows_error(monkeypatch):
@@ -322,6 +352,11 @@ def test_clipboard_flow_read_failure_logs_exception_and_shows_error(monkeypatch)
 
 def test_clipboard_flow_write_failure_logs_exception_and_shows_error(monkeypatch):
     dialog_calls = patch_message_dialog(monkeypatch)
+    monkeypatch.setattr(
+        tui,
+        "button_dialog",
+        lambda **kwargs: FakeDialog([], True, **kwargs),
+    )
     clipboard = FakeClipboard("\u00a0Hello\u00a0\u00a0World\u00a0", fail_write=True)
     logger = FakeLogger()
 

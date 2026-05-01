@@ -57,6 +57,16 @@ stable TOML ID and display name. The app ships with starter profiles for NBSP
 cleanup, web text cleanup, plain text normalization, deduplicating lines, and
 ASCII-safe cleanup.
 
+The profile file is strict: misspelled keys are treated as config errors instead
+of being ignored.
+
+## Clipboard Flow
+
+The clipboard action reads the current clipboard, applies the selected profile,
+and shows a preview with input/output character counts. Choose `Copy` to replace
+the clipboard with the cleaned text, or `Cancel` to leave the clipboard
+unchanged.
+
 ## Operation Order
 
 Selected operations run in the engine-defined order below, not in the order they

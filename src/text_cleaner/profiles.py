@@ -39,6 +39,9 @@ VALID_OPERATIONS = {
     "decode_html_entities",
     "remove_duplicate_lines",
 }
+TOP_LEVEL_KEYS = {"profiles"}
+PROFILE_KEYS = {"name", "description", "operations", "replacements"}
+REPLACEMENT_KEYS = {"find", "replace", "regex"}
 
 
 @dataclass(frozen=True)
@@ -63,6 +66,12 @@ class Profile:
 
 def normalize_display_name(name: str) -> str:
     return " ".join(name.strip().casefold().split())
+
+
+def reject_unknown_keys(raw: dict[str, Any], allowed: set[str], context: str) -> None:
+    unknown = sorted(set(raw) - allowed)
+    if unknown:
+        raise ProfileValidationError(f"unknown key for {context}: {unknown[0]}")
 
 
 def validate_profiles(profiles: dict[str, Profile]) -> None:
@@ -169,6 +178,10 @@ def load_profiles(path: Path) -> dict[str, Profile]:
     except tomllib.TOMLDecodeError as exc:
         raise ProfileValidationError(f"invalid TOML in {path}: {exc}") from exc
 
+    unknown_top_level = sorted(set(data) - TOP_LEVEL_KEYS)
+    if unknown_top_level:
+        raise ProfileValidationError(f"unknown top-level key: {unknown_top_level[0]}")
+
     raw_profiles = data.get("profiles", {})
     if not isinstance(raw_profiles, dict):
         raise ProfileValidationError("profiles must be a table")
@@ -177,6 +190,7 @@ def load_profiles(path: Path) -> dict[str, Profile]:
     for profile_id, raw_profile in raw_profiles.items():
         if not isinstance(raw_profile, dict):
             raise ProfileValidationError(f"profile {profile_id} must be a table")
+        reject_unknown_keys(raw_profile, PROFILE_KEYS, f"profile {profile_id}")
 
         operations = raw_profile.get("operations", [])
         if not isinstance(operations, list) or not all(
@@ -196,6 +210,11 @@ def load_profiles(path: Path) -> dict[str, Profile]:
                 raise ProfileValidationError(
                     f"profile {profile_id} replacement {index} must be a table"
                 )
+            reject_unknown_keys(
+                raw_rule,
+                REPLACEMENT_KEYS,
+                f"profile {profile_id} replacement {index}",
+            )
             find = raw_rule.get("find", "")
             replace = raw_rule.get("replace", "")
             regex = raw_rule.get("regex", False)

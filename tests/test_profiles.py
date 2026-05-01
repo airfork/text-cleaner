@@ -206,6 +206,58 @@ replacements = ["not a table"]
         load_profiles(path)
 
 
+def test_load_profiles_rejects_unknown_top_level_key(tmp_path):
+    path = tmp_path / "profiles.toml"
+    path.write_text(
+        """
+[profile.bad]
+name = "Bad"
+description = "bad"
+operations = ["trim"]
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ProfileValidationError, match="unknown top-level key: profile"):
+        load_profiles(path)
+
+
+def test_load_profiles_rejects_unknown_profile_key(tmp_path):
+    path = tmp_path / "profiles.toml"
+    path.write_text(
+        """
+[profiles.bad]
+name = "Bad"
+description = "bad"
+operatoins = ["trim"]
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ProfileValidationError, match="unknown key for profile bad: operatoins"):
+        load_profiles(path)
+
+
+def test_load_profiles_rejects_unknown_replacement_key(tmp_path):
+    path = tmp_path / "profiles.toml"
+    path.write_text(
+        """
+[profiles.bad]
+name = "Bad"
+description = "bad"
+operations = ["trim"]
+replacements = [{ find = "x", replace = "y", regexx = true }]
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        ProfileValidationError,
+        match="unknown key for profile bad replacement 0: regexx",
+    ):
+        load_profiles(path)
+
+
 @pytest.mark.parametrize(
     "operations",
     [

@@ -167,7 +167,7 @@ Convert NBSP/unicode spaces, trim, collapse repeated spaces
 Primary workflows:
 
 - Paste mode: select a profile, paste text into an editor area, run cleaning, preview output, copy output.
-- Clipboard mode: select a profile, press a key, read clipboard, clean it, write cleaned text back to clipboard, then show a short report.
+- Clipboard mode: select a profile, press a key, read clipboard, clean it, preview the result, and confirm before writing cleaned text back to the clipboard.
 - Profile mode: create and edit profile settings through checklists, simple fields, and replacement-rule controls.
 
 The TUI shows each profile's display name, description, and operation summary. Last-modified timestamps are out of scope for v1.
@@ -181,6 +181,7 @@ Config validation must prevent ambiguous profile selection and bad saves:
 - invalid operation names are blocked on save
 - replacement rules require a non-empty `find` value
 - regex replacement rules must compile before saving
+- unknown or misspelled top-level, profile, and replacement keys are rejected
 
 Config writes should be defensive:
 

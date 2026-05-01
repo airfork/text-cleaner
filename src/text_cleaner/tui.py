@@ -297,6 +297,23 @@ def clipboard_flow(
     try:
         source = clipboard.read_text()
         result = clean_text(source, profile)
+        should_copy = button_dialog(
+            title="Clipboard preview",
+            text=(
+                f"{result.report.input_chars} chars -> {result.report.output_chars} chars\n\n"
+                f"{result.text[:OUTPUT_PREVIEW_CHARS]}"
+            ),
+            buttons=[("Copy", True), ("Cancel", False)],
+        ).run()
+        if not should_copy:
+            logger.info(
+                "clipboard_flow_cancelled profile=%s input_chars=%s output_chars=%s operations=%s",
+                profile.profile_id,
+                result.report.input_chars,
+                result.report.output_chars,
+                result.report.operations,
+            )
+            return
         clipboard.write_text(result.text)
     except ClipboardError as exc:
         logger.exception("clipboard_flow_failed profile=%s", profile.profile_id)

@@ -126,6 +126,14 @@ def test_windows_launcher_probes_runtimes_before_running_app():
     assert "exit /b 0" not in lines[python_run_index + 1]
 
 
+def test_windows_launcher_uses_quote_safe_portable_dir():
+    run_cmd = (ROOT / "packaging" / "run.cmd").read_text()
+
+    assert 'set "APP_DIR=%~dp0."' in run_cmd
+    assert '"%APP_DIR%\\"' not in run_cmd
+    assert '"%APP_DIR%\\text-cleaner.pyz" --portable-dir "%APP_DIR%"' in run_cmd
+
+
 def test_posix_launcher_probes_python_version_before_execing_app():
     run_command = (ROOT / "packaging" / "run.command").read_text()
     lines = [line.strip() for line in run_command.splitlines()]

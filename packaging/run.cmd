@@ -1,13 +1,13 @@
 @echo off
 setlocal
-set "APP_DIR=%~dp0"
-if not exist "%APP_DIR%logs" mkdir "%APP_DIR%logs"
+set "APP_DIR=%~dp0."
+if not exist "%APP_DIR%\logs" mkdir "%APP_DIR%\logs"
 
 where py >nul 2>nul
 if errorlevel 1 goto try_python
 py -3 -c "import sys; raise SystemExit(not (sys.version_info >= (3, 11)))" >nul 2>nul
 if errorlevel 1 goto try_python
-py -3 "%APP_DIR%text-cleaner.pyz" --portable-dir "%APP_DIR%"
+py -3 "%APP_DIR%\text-cleaner.pyz" --portable-dir "%APP_DIR%"
 exit /b
 
 :try_python
@@ -15,10 +15,10 @@ where python >nul 2>nul
 if errorlevel 1 goto no_python
 python -c "import sys; raise SystemExit(not (sys.version_info >= (3, 11)))" >nul 2>nul
 if errorlevel 1 goto no_python
-python "%APP_DIR%text-cleaner.pyz" --portable-dir "%APP_DIR%"
+python "%APP_DIR%\text-cleaner.pyz" --portable-dir "%APP_DIR%"
 exit /b
 
 :no_python
-echo Python 3.11 or newer was not found. Install Python or run with an available Python command. > "%APP_DIR%logs\startup-error.log"
+echo Python 3.11 or newer was not found. Install Python or run with an available Python command. > "%APP_DIR%\logs\startup-error.log"
 echo Python 3.11 or newer was not found.
 exit /b 1
