@@ -6,7 +6,7 @@ if not exist "%APP_DIR%logs" mkdir "%APP_DIR%logs"
 where py >nul 2>nul
 if %ERRORLEVEL% EQU 0 (
   py -3 "%APP_DIR%text-cleaner.pyz" --portable-dir "%APP_DIR%"
-  exit /b %ERRORLEVEL%
+  if %ERRORLEVEL% EQU 0 exit /b 0
 )
 
 where python >nul 2>nul
