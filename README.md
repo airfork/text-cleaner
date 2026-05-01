@@ -57,8 +57,14 @@ uv run python scripts/release_github.py
 ```
 
 If the release tag does not exist, the script creates it. If it already exists,
-the script replaces `text-cleaner-windows.zip` on that release with a freshly
-built copy.
+the script stops and asks you to bump `project.version` in `pyproject.toml` so a
+new release tag is created instead of repeatedly replacing the same version.
+
+To intentionally refresh the zip on an existing release:
+
+```bash
+uv run python scripts/release_github.py --replace-existing
+```
 
 The script refuses to publish when the working tree has uncommitted changes. To
 override that for a one-off test release:

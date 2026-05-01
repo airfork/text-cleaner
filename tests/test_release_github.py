@@ -110,6 +110,21 @@ def test_publish_release_creates_release_when_tag_missing(tmp_path, monkeypatch)
     assert "--notes" in runner.commands[-1]
 
 
+def test_publish_release_rejects_existing_tag_by_default(tmp_path, monkeypatch):
+    zip_path = tmp_path / "text-cleaner-windows.zip"
+    zip_path.write_bytes(b"zip")
+    monkeypatch.setattr(release_github, "package_windows_zip", lambda: zip_path)
+
+    with pytest.raises(RuntimeError, match="Release v1.2.3 already exists"):
+        release_github.publish_release(
+            tag="v1.2.3",
+            repo="airfork/text-cleaner",
+            run=FakeRunner(release_exists=True),
+            check_before_release=False,
+            allow_dirty=False,
+        )
+
+
 def test_publish_release_replaces_asset_when_release_exists(tmp_path, monkeypatch):
     zip_path = tmp_path / "text-cleaner-windows.zip"
     zip_path.write_bytes(b"zip")
@@ -122,6 +137,7 @@ def test_publish_release_replaces_asset_when_release_exists(tmp_path, monkeypatc
         run=runner,
         check_before_release=False,
         allow_dirty=False,
+        replace_existing=True,
     )
 
     assert runner.commands[-1] == [

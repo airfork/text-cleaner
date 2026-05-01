@@ -87,17 +87,25 @@ def publish_release(
     run=subprocess.run,
     check_before_release: bool = True,
     allow_dirty: bool = False,
+    replace_existing: bool = False,
 ) -> Path:
     if not allow_dirty and git_is_dirty(run=run):
         raise RuntimeError(
             "working tree has uncommitted changes; commit them or pass --allow-dirty"
         )
 
+    existing_release = release_exists(tag, repo, run=run)
+    if existing_release and not replace_existing:
+        raise RuntimeError(
+            f"Release {tag} already exists in {repo}; bump project.version in "
+            "pyproject.toml or pass --replace-existing to overwrite that release asset"
+        )
+
     if check_before_release:
         run_checks(run=run)
 
     zip_path = package_windows_zip()
-    if release_exists(tag, repo, run=run):
+    if existing_release:
         run(
             [
                 "gh",
@@ -152,6 +160,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Allow publishing from a working tree with uncommitted changes.",
     )
+    parser.add_argument(
+        "--replace-existing",
+        action="store_true",
+        help="Replace the zip asset when the release tag already exists.",
+    )
     return parser
 
 
@@ -162,6 +175,7 @@ def main(argv: list[str] | None = None) -> int:
         repo=args.repo,
         check_before_release=not args.skip_checks,
         allow_dirty=args.allow_dirty,
+        replace_existing=args.replace_existing,
     )
     print(f"Published {zip_path} to {args.repo} {args.tag}")
     return 0
