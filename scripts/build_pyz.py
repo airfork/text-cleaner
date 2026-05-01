@@ -13,6 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DIST_DIR = ROOT / "dist" / "text-cleaner"
 ARCHIVE = DIST_DIR / "text-cleaner.pyz"
+PYTHON_VERSION_PROBE = "import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)"
 
 
 @dataclass(frozen=True)
@@ -77,7 +78,7 @@ def resolve_runtime_python(
             continue
         try:
             subprocess.run(
-                [*args, "--version"],
+                [*args, "-c", PYTHON_VERSION_PROBE],
                 check=True,
                 cwd=ROOT,
                 env=env,
