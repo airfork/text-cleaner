@@ -255,3 +255,49 @@ def save_profiles(path: Path, profiles: dict[str, Profile]) -> None:
     temp = path.with_suffix(path.suffix + ".tmp")
     temp.write_text(tomli_w.dumps(data), encoding="utf-8")
     temp.replace(path)
+
+
+class ProfileRepository:
+    def __init__(self, path: Path | str) -> None:
+        self.path = Path(path)
+
+    def load_or_create(self) -> dict[str, Profile]:
+        if not self.path.exists():
+            profiles = default_profiles()
+            self.save(profiles)
+            return profiles
+
+        profiles = load_profiles(self.path)
+        if not profiles:
+            profiles = default_profiles()
+            self.save(profiles)
+        return profiles
+
+    def save(self, profiles: dict[str, Profile]) -> None:
+        save_profiles(self.path, profiles)
+
+    def clear_profile(
+        self, profiles: dict[str, Profile], profile_id: str
+    ) -> dict[str, Profile]:
+        profile = profiles[profile_id]
+        updated = {
+            **profiles,
+            profile_id: Profile(
+                profile_id=profile.profile_id,
+                name=profile.name,
+                description=profile.description,
+            ),
+        }
+        self.save(updated)
+        return updated
+
+    def delete_profile(
+        self, profiles: dict[str, Profile], profile_id: str
+    ) -> dict[str, Profile]:
+        updated = dict(profiles)
+        del updated[profile_id]
+        if not updated:
+            return updated
+
+        self.save(updated)
+        return updated
