@@ -6,7 +6,6 @@ import posixpath
 import shutil
 import stat
 import subprocess
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -89,7 +88,10 @@ def resolve_runtime_python(
             continue
         return RuntimePython(args, env)
 
-    return RuntimePython([sys.executable], dict(os.environ if environ is None else environ))
+    raise RuntimeError(
+        "No suitable Python 3.11+ runtime found on PATH after excluding the active "
+        "virtual environment."
+    )
 
 
 def build() -> None:

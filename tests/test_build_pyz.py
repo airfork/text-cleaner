@@ -3,6 +3,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
@@ -77,7 +79,7 @@ def test_resolve_runtime_python_skips_candidate_when_version_probe_fails(monkeyp
     ]
 
 
-def test_resolve_runtime_python_falls_back_to_current_python_when_no_probe_succeeds(
+def test_resolve_runtime_python_raises_when_no_probe_succeeds(
     monkeypatch,
 ):
     run_calls = []
@@ -92,11 +94,9 @@ def test_resolve_runtime_python_falls_back_to_current_python_when_no_probe_succe
 
     monkeypatch.setattr(build_pyz.shutil, "which", fake_which)
     monkeypatch.setattr(build_pyz.subprocess, "run", fake_run)
-    monkeypatch.setattr(build_pyz.sys, "executable", "/current/python")
+    with pytest.raises(RuntimeError, match="No suitable Python 3.11"):
+        resolve_runtime_python("posix", {"PATH": "/usr/bin"})
 
-    runtime_python = resolve_runtime_python("posix", {"PATH": "/usr/bin"})
-
-    assert runtime_python.command == ["/current/python"]
     assert run_calls == [
         ["python3", "-c", build_pyz.PYTHON_VERSION_PROBE],
         ["python", "-c", build_pyz.PYTHON_VERSION_PROBE],

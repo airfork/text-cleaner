@@ -57,6 +57,35 @@ stable TOML ID and display name. The app ships with starter profiles for NBSP
 cleanup, web text cleanup, plain text normalization, deduplicating lines, and
 ASCII-safe cleanup.
 
+## Operation Order
+
+Selected operations run in the engine-defined order below, not in the order they
+appear in `profiles.toml` or the TUI checklist:
+
+```text
+strip_html_tags
+decode_html_entities
+normalize_unicode
+unicode_spaces_to_normal_space
+trim
+remove_blank_lines
+collapse_spaces
+collapse_blank_lines
+line_breaks_to_spaces
+remove_line_breaks
+uppercase
+lowercase
+sentence_case
+capitalize_words
+smart_quotes_to_plain
+remove_punctuation
+strip_emoji
+remove_accents
+remove_non_ascii
+remove_non_alphanumeric
+remove_duplicate_lines
+```
+
 ## Logs
 
 Logs are written beside the app under `logs/`.

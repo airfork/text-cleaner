@@ -94,10 +94,16 @@ def validate_profiles(profiles: dict[str, Profile]) -> None:
                 raise ProfileValidationError(f"replacement find cannot be empty for {profile_id}")
             if rule.regex:
                 try:
-                    re.compile(rule.find)
+                    compiled = re.compile(rule.find)
                 except re.error as exc:
                     raise ProfileValidationError(
                         f"invalid replacement regex for {profile_id}: {rule.find}"
+                    ) from exc
+                try:
+                    compiled.sub(rule.replace, "")
+                except re.error as exc:
+                    raise ProfileValidationError(
+                        f"invalid replacement template for {profile_id}"
                     ) from exc
 
 

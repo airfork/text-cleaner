@@ -99,6 +99,35 @@ def test_validate_rejects_invalid_regex_as_profile_validation_error():
         validate_profiles(profiles)
 
 
+def test_validate_rejects_invalid_regex_replacement_template():
+    profiles = {
+        "bad": Profile(
+            "bad",
+            "Bad",
+            "description",
+            [],
+            [ReplacementRule(find=r"(x)", replace=r"\2", regex=True)],
+        ),
+    }
+
+    with pytest.raises(ProfileValidationError, match="invalid replacement template"):
+        validate_profiles(profiles)
+
+
+def test_validate_accepts_regex_replacement_capture_group():
+    profiles = {
+        "good": Profile(
+            "good",
+            "Good",
+            "description",
+            [],
+            [ReplacementRule(find=r"(\w+), (\w+)", replace=r"\2 \1", regex=True)],
+        ),
+    }
+
+    validate_profiles(profiles)
+
+
 def test_profile_constructor_converts_mutable_lists_to_tuples():
     rule = ReplacementRule(find="old", replace="new", regex=False)
     operations = ["trim"]
