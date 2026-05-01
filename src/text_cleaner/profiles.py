@@ -296,8 +296,5 @@ class ProfileRepository:
     ) -> dict[str, Profile]:
         updated = dict(profiles)
         del updated[profile_id]
-        if not updated:
-            return updated
-
         self.save(updated)
         return updated
