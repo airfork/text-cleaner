@@ -46,9 +46,11 @@ def test_exclude_active_virtualenv_removes_posix_bin_path():
     assert filtered == ":".join(["/usr/local/bin", "/usr/bin"])
 
 
-def test_windows_launcher_falls_back_to_python_when_py_launcher_fails():
+def test_windows_launcher_avoids_stale_errorlevel_expansion():
     run_cmd = (ROOT / "packaging" / "run.cmd").read_text()
-    py_branch = run_cmd.split("where python", maxsplit=1)[0]
+    lower_run_cmd = run_cmd.lower()
 
-    assert 'if %ERRORLEVEL% EQU 0 exit /b 0' in py_branch
-    assert 'exit /b %ERRORLEVEL%' not in py_branch
+    assert "%ERRORLEVEL%" not in run_cmd
+    assert lower_run_cmd.index("py -3") < lower_run_cmd.index("where python")
+    assert "if errorlevel 1" in lower_run_cmd
+    assert "if not errorlevel 1" in lower_run_cmd
