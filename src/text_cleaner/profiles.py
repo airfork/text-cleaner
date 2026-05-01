@@ -13,6 +13,9 @@ class ProfileValidationError(ValueError):
     pass
 
 
+PROFILE_ID_PATTERN = re.compile(r"^[a-z0-9_]+$")
+
+
 VALID_OPERATIONS = {
     "unicode_spaces_to_normal_space",
     "trim",
@@ -50,8 +53,12 @@ class Profile:
     profile_id: str
     name: str
     description: str
-    operations: list[str] = field(default_factory=list)
-    replacements: list[ReplacementRule] = field(default_factory=list)
+    operations: tuple[str, ...] = field(default_factory=tuple)
+    replacements: tuple[ReplacementRule, ...] = field(default_factory=tuple)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "operations", tuple(self.operations))
+        object.__setattr__(self, "replacements", tuple(self.replacements))
 
 
 def normalize_display_name(name: str) -> str:
@@ -63,8 +70,11 @@ def validate_profiles(profiles: dict[str, Profile]) -> None:
     for profile_id, profile in profiles.items():
         if profile_id != profile.profile_id:
             raise ProfileValidationError(f"profile key mismatch for {profile_id}")
-        if not profile_id.strip():
-            raise ProfileValidationError("profile id cannot be empty")
+        if not PROFILE_ID_PATTERN.fullmatch(profile_id):
+            raise ProfileValidationError(
+                "profile id must use lowercase ASCII letters, digits, and "
+                f"underscores: {profile_id}"
+            )
 
         normalized_name = normalize_display_name(profile.name)
         if not normalized_name:
@@ -148,23 +158,67 @@ def default_profiles() -> dict[str, Profile]:
 
 
 def load_profiles(path: Path) -> dict[str, Profile]:
-    data = tomllib.loads(path.read_text(encoding="utf-8"))
+    try:
+        data = tomllib.loads(path.read_text(encoding="utf-8"))
+    except tomllib.TOMLDecodeError as exc:
+        raise ProfileValidationError(f"invalid TOML in {path}: {exc}") from exc
+
     raw_profiles = data.get("profiles", {})
+    if not isinstance(raw_profiles, dict):
+        raise ProfileValidationError("profiles must be a table")
+
     profiles: dict[str, Profile] = {}
     for profile_id, raw_profile in raw_profiles.items():
-        replacements = [
-            ReplacementRule(
-                find=str(rule.get("find", "")),
-                replace=str(rule.get("replace", "")),
-                regex=bool(rule.get("regex", False)),
+        if not isinstance(raw_profile, dict):
+            raise ProfileValidationError(f"profile {profile_id} must be a table")
+
+        operations = raw_profile.get("operations", [])
+        if not isinstance(operations, list) or not all(
+            isinstance(operation, str) for operation in operations
+        ):
+            raise ProfileValidationError(
+                f"profile {profile_id} operations must be a list of strings"
             )
-            for rule in raw_profile.get("replacements", [])
-        ]
+
+        raw_replacements = raw_profile.get("replacements", [])
+        if not isinstance(raw_replacements, list):
+            raise ProfileValidationError(f"profile {profile_id} replacements must be a list")
+
+        replacements: list[ReplacementRule] = []
+        for index, raw_rule in enumerate(raw_replacements):
+            if not isinstance(raw_rule, dict):
+                raise ProfileValidationError(
+                    f"profile {profile_id} replacement {index} must be a table"
+                )
+            find = raw_rule.get("find", "")
+            replace = raw_rule.get("replace", "")
+            regex = raw_rule.get("regex", False)
+            if not isinstance(find, str):
+                raise ProfileValidationError(
+                    f"profile {profile_id} replacement {index} find must be a string"
+                )
+            if not isinstance(replace, str):
+                raise ProfileValidationError(
+                    f"profile {profile_id} replacement {index} replace must be a string"
+                )
+            if not isinstance(regex, bool):
+                raise ProfileValidationError(
+                    f"profile {profile_id} replacement {index} regex must be a boolean"
+                )
+            replacements.append(ReplacementRule(find=find, replace=replace, regex=regex))
+
+        name = raw_profile.get("name", "")
+        description = raw_profile.get("description", "")
+        if not isinstance(name, str):
+            raise ProfileValidationError(f"profile {profile_id} name must be a string")
+        if not isinstance(description, str):
+            raise ProfileValidationError(f"profile {profile_id} description must be a string")
+
         profiles[profile_id] = Profile(
             profile_id=profile_id,
-            name=str(raw_profile.get("name", "")),
-            description=str(raw_profile.get("description", "")),
-            operations=list(raw_profile.get("operations", [])),
+            name=name,
+            description=description,
+            operations=operations,
             replacements=replacements,
         )
     validate_profiles(profiles)
