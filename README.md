@@ -13,13 +13,18 @@ uv run ruff check .
 
 ## Portable Build
 
+Planned for the portable build task, after it adds `scripts/build_pyz.py`:
+
 ```bash
 uv run python scripts/build_pyz.py
 ```
 
-The build creates `dist/text-cleaner/`.
+That build will create `dist/text-cleaner/`.
 
 ## Running The Portable App
+
+The portable launchers and `.pyz` are produced by the portable build task and
+are not present in the initial scaffold.
 
 macOS:
 
