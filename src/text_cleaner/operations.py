@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import html
+import html.entities
 import re
-import string
 import unicodedata
 from collections.abc import Callable
 from html.parser import HTMLParser
@@ -21,7 +21,10 @@ class _TextExtractor(HTMLParser):
         self.parts.append(data)
 
     def handle_entityref(self, name: str) -> None:
-        self.parts.append(f"&{name};")
+        if name in html.entities.name2codepoint:
+            self.parts.append(f"&{name};")
+        else:
+            self.parts.append(f"&{name}")
 
     def handle_charref(self, name: str) -> None:
         self.parts.append(f"&#{name};")
@@ -68,7 +71,7 @@ def collapse_blank_lines(text: str) -> str:
 
 
 def line_breaks_to_spaces(text: str) -> str:
-    return re.sub(r"[ \t]*\r?\n[ \t]*", " ", text)
+    return re.sub(r"[ \t]*(?:\r\n|\r|\n)[ \t]*", " ", text)
 
 
 def remove_line_breaks(text: str) -> str:
@@ -88,6 +91,17 @@ def sentence_case(text: str) -> str:
             capitalize_next = True
 
     return "".join(chars)
+
+
+def capitalize_words(text: str) -> str:
+    return re.sub(r"\S+", lambda match: match.group(0).capitalize(), text)
+
+
+def normalize_unicode(text: str) -> str:
+    return "".join(
+        ch if unicodedata.category(ch) == "Zs" else unicodedata.normalize("NFKC", ch)
+        for ch in text
+    )
 
 
 def remove_punctuation(text: str) -> str:
@@ -112,8 +126,12 @@ def smart_quotes_to_plain(text: str) -> str:
 
 
 def strip_html_tags(text: str) -> str:
+    if "<" not in text and ">" not in text:
+        return text
+
     parser = _TextExtractor()
     parser.feed(text)
+    parser.close()
     return parser.text()
 
 
@@ -140,11 +158,11 @@ OPERATIONS: dict[str, Callable[[str], str]] = {
     "uppercase": str.upper,
     "lowercase": str.lower,
     "sentence_case": sentence_case,
-    "capitalize_words": string.capwords,
+    "capitalize_words": capitalize_words,
     "remove_punctuation": remove_punctuation,
     "strip_emoji": lambda text: emoji.replace_emoji(text, replace=""),
     "remove_accents": remove_accents,
-    "normalize_unicode": lambda text: unicodedata.normalize("NFKC", text),
+    "normalize_unicode": normalize_unicode,
     "remove_non_ascii": remove_non_ascii,
     "remove_non_alphanumeric": remove_non_alphanumeric,
     "smart_quotes_to_plain": smart_quotes_to_plain,

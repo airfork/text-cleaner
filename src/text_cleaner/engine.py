@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from text_cleaner.operations import OPERATION_ORDER, apply_operation
+from text_cleaner.operations import OPERATION_ORDER, OPERATIONS, apply_operation
 from text_cleaner.profiles import Profile
 
 
@@ -13,8 +13,8 @@ class CleanReport:
     profile_name: str
     input_chars: int
     output_chars: int
-    operations: list[str]
-    warnings: list[str]
+    operations: tuple[str, ...]
+    warnings: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -24,6 +24,12 @@ class CleanResult:
 
 
 def clean_text(text: str, profile: Profile) -> CleanResult:
+    unknown_operations = [
+        operation for operation in profile.operations if operation not in OPERATIONS
+    ]
+    if unknown_operations:
+        raise ValueError(f"unknown operation: {unknown_operations[0]}")
+
     selected = set(profile.operations)
     ordered = [operation for operation in OPERATION_ORDER if operation in selected]
 
@@ -44,7 +50,7 @@ def clean_text(text: str, profile: Profile) -> CleanResult:
             profile_name=profile.name,
             input_chars=len(text),
             output_chars=len(output),
-            operations=ordered,
-            warnings=[],
+            operations=tuple(ordered),
+            warnings=(),
         ),
     )
