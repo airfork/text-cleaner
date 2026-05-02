@@ -73,10 +73,10 @@ override that for a one-off test release:
 uv run python scripts/release_github.py --allow-dirty
 ```
 
-Download the latest release on Windows with GitHub CLI:
+Download and unzip the latest Windows release:
 
 ```powershell
-gh release download --repo airfork/text-cleaner --pattern text-cleaner-windows.zip
+gh release download --repo airfork/text-cleaner --pattern text-cleaner-windows.zip --clobber
 Expand-Archive .\text-cleaner-windows.zip -DestinationPath . -Force
 cd .\text-cleaner
 .\run.cmd
@@ -86,29 +86,6 @@ Or download a specific version:
 
 ```powershell
 gh release download v0.1.1 --repo airfork/text-cleaner --pattern text-cleaner-windows.zip
-```
-
-## Email Windows Zip
-
-The email helper uses iCloud SMTP by default and stores the app-specific password
-in the OS keyring. Do not put the app-specific password in this repo.
-
-One-time setup:
-
-```bash
-uv run python scripts/email_windows_zip.py --setup --from yourname@icloud.com
-```
-
-Send the package:
-
-```bash
-uv run python scripts/email_windows_zip.py --from yourname@icloud.com --to destination@example.com
-```
-
-Reset the stored password:
-
-```bash
-uv run python scripts/email_windows_zip.py --setup --reset-password --from yourname@icloud.com
 ```
 
 ## Running The Portable App
